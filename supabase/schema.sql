@@ -1,6 +1,8 @@
 -- Comprehensive Attendance Management System Schema
 -- This schema includes advanced features for detailed attendance tracking, analytics, and reporting
 
+-- Required for gen_random_uuid()
+
 -- 1. Users table (extends auth.users with additional profile information)
 CREATE TABLE IF NOT EXISTS profiles (
   id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
@@ -391,3 +393,200 @@ VALUES
     ('Independence Day', '2024-07-04', 'national', true, true),
     ('Christmas Day', '2024-12-25', 'national', true, true)
 ON CONFLICT DO NOTHING;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+alter table public.profiles
+  add column if not exists phone text,
+  add column if not exists address text,
+  add column if not exists bio text,
+  add column if not exists work_schedule text default '9_to_5',
+  add column if not exists timezone text default 'UTC';
+
+  -- role column consolidated later with final enum/default
+
+ALTER TABLE profiles
+ADD COLUMN IF NOT EXISTS role text
+  CHECK (role IN ('employee','assistant','manager','admin'))
+  DEFAULT 'employee';
+
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public AS $$
+BEGIN
+  INSERT INTO public.profiles (id, full_name, hire_date, is_active, role)
+  VALUES (
+    NEW.id,
+    COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1)),
+    current_date,
+    true,
+    COALESCE(NEW.raw_user_meta_data->>'role', 'employee')
+  )
+  ON CONFLICT (id) DO NOTHING;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+AFTER INSERT ON auth.users
+FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+CREATE OR REPLACE FUNCTION public.prevent_role_escalation()
+RETURNS trigger
+LANGUAGE plpgsql AS $$
+DECLARE
+  jwt jsonb;
+BEGIN
+  -- Allow service role (internal server ops)
+  IF current_user = 'service_role' THEN
+    RETURN NEW;
+  END IF;
+
+  -- Block role changes unless caller is admin
+  IF NEW.role IS DISTINCT FROM OLD.role THEN
+    jwt := NULLIF(current_setting('request.jwt.claims', true), '')::jsonb;
+    IF coalesce(jwt->'user_metadata'->>'role', jwt->'app_metadata'->>'role') <> 'admin' THEN
+      RAISE EXCEPTION 'Only admins can change role';
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END $$;
+
+DROP TRIGGER IF EXISTS trg_profiles_role_guard ON public.profiles;
+CREATE TRIGGER trg_profiles_role_guard
+BEFORE UPDATE ON public.profiles
+FOR EACH ROW EXECUTE PROCEDURE public.prevent_role_escalation();
+
+insert into public.profiles (id, full_name, hire_date, is_active)
+select u.id,
+       split_part(u.email, '@', 1),
+       current_date,
+       true
+from auth.users u
+left join public.profiles p on p.id = u.id
+where p.id is null;
+
+drop policy if exists "profiles_select_admin" on public.profiles;
+create policy "profiles_select_admin" on public.profiles
+for select using (exists (
+  select 1 from public.profiles p where p.id = auth.uid() and p.role in ('manager','admin')
+));
+
+drop policy if exists "attendance_select_admin" on public.attendance;
+create policy "attendance_select_admin" on public.attendance
+for select using (exists (
+  select 1 from public.profiles p where p.id = auth.uid() and p.role in ('manager','admin')
+));
+
+drop policy if exists "attendance_update_admin" on public.attendance;
+create policy "attendance_update_admin" on public.attendance
+for update using (exists (
+  select 1 from public.profiles p where p.id = auth.uid() and p.role in ('manager','admin')
+));
+
+drop policy if exists "leave_select_admin" on public.leave_requests;
+create policy "leave_select_admin" on public.leave_requests
+for select using (exists (
+  select 1 from public.profiles p where p.id = auth.uid() and p.role in ('manager','admin')
+));
+
+drop policy if exists "leave_update_admin" on public.leave_requests;
+create policy "leave_update_admin" on public.leave_requests
+for update using (exists (
+  select 1 from public.profiles p where p.id = auth.uid() and p.role in ('manager','admin')
+));
+
+-- Select own leaves
+drop policy if exists "leave_select_own" on public.leave_requests;
+create policy "leave_select_own" on public.leave_requests
+for select using (auth.uid() = user_id);
+
+-- Insert own leaves (WITH CHECK is required for INSERT)
+drop policy if exists "leave_insert_own" on public.leave_requests;
+create policy "leave_insert_own" on public.leave_requests
+for insert with check (auth.uid() = user_id);
+
+-- Update own leaves (optional, for user-side cancellations)
+drop policy if exists "leave_update_own" on public.leave_requests;
+create policy "leave_update_own" on public.leave_requests
+for update using (auth.uid() = user_id);
+
+-- 1. Verify table exists
+SELECT * FROM information_schema.tables 
+WHERE table_name = 'attendance_summaries';
+
+-- 2. Check RLS policies
+SELECT * FROM pg_policies 
+WHERE tablename = 'attendance_summaries';
+
+-- 3. Add minimal policy if needed (adjust as needed)
+CREATE POLICY "Enable user access" 
+ON attendance_summaries FOR SELECT 
+USING (auth.uid() = user_id);
+
+-- 1) Create a sequence for employee_id numbers
+CREATE SEQUENCE IF NOT EXISTS public.employee_id_seq START WITH 1 INCREMENT BY 1;
+
+-- 2) Ensure the column exists and is unique
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS employee_id text;
+
+ALTER TABLE public.profiles
+  ADD CONSTRAINT profiles_employee_id_unique UNIQUE (employee_id);
+
+-- 3) Set the default to EMP-<padded sequence>
+ALTER TABLE public.profiles
+  ALTER COLUMN employee_id DROP DEFAULT,
+  ALTER COLUMN employee_id SET DEFAULT ('EMP-' || lpad(nextval('public.employee_id_seq')::text, 6, '0'));
+
+-- 4) Backfill any missing employee_id
+UPDATE public.profiles
+SET employee_id = 'EMP-' || lpad(nextval('public.employee_id_seq')::text, 6, '0')
+WHERE employee_id IS NULL;
+
+
+  CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public AS $$
+BEGIN
+  INSERT INTO public.profiles (id, full_name, hire_date, is_active, role)
+  VALUES (
+    NEW.id,
+    COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1)),
+    current_date,
+    true,
+    COALESCE(NEW.raw_user_meta_data->>'role', 'employee')
+  )
+  ON CONFLICT (id) DO NOTHING;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+AFTER INSERT ON auth.users
+FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();

@@ -5,83 +5,77 @@ import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useAuth } from '@/contexts/AuthContext'
 import { Home, FileText, BarChart3, Coffee, Settings, Menu, X, Briefcase, Shield, LogOut } from 'lucide-react'
 import NotificationCenter from '@/components/NotificationCenter'
+import { createClient } from '@/lib/supabase/client';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { ErrorBoundary } from 'react-error-boundary';
 
-export default function Navbar() {
+export default function Navbar({ hidden = false }: { hidden?: boolean }) {
+  if (hidden) return null;
+  
   const { user, signOut } = useAuth()
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [profile, setProfile] = useState<{
-    role?: 'employee' | 'assistant' | 'manager' | 'admin'
-    full_name?: string
-    employee_id?: string
-    avatar_url?: string
-  } | null>(null)
+  const [isLoading, setIsLoading] = useState(true);
+  const [profile, setProfile] = useState<{full_name?: string, employee_id?: string, role?: string} | null>(null);
+  const [attendance, setAttendance] = useState<AttendanceSummary | null>(null);
+
+  interface AttendanceSummary {
+    days_present?: number;
+    days_absent?: number;
+    period_start?: string;
+  }
+
+  const supabase = createClient();
 
   useEffect(() => {
-    const loadProfile = async () => {
+    let isMounted = true;
+
+    const fetchData = async () => {
       try {
-        if (!user || !user.id) {
-          console.log('No user or user ID available')
-          return
-        }
+        if (!user || !isMounted) return;
         
-        console.log('Loading profile for user:', user.id)
-        
-        const { createClient } = await import('@/lib/supabase/client')
-        const supabase = createClient()
-        
-        console.log('Supabase client created, fetching profile...')
-        
+        setIsLoading(true);
+
         const { data, error } = await supabase
           .from('profiles')
-          .select('*')
+          .select('full_name, employee_id, role')
           .eq('id', user.id)
-          .single()
-        
-        if (error) {
-          console.error('Supabase error:', {
-            message: error.message,
-            code: error.code,
-            details: error.details,
-            hint: error.hint
-          })
-          return
-        }
-        
-        if (!data) {
-          console.error('No profile data returned')
-          return
-        }
-        
-        console.log('Profile data loaded:', data)
-        
-        setProfile({
-          role: data.role,
-          full_name: data.full_name,
-          employee_id: data.employee_id,
-          avatar_url: data.avatar_url
-        })
-        
-      } catch (error: unknown) {
-        console.error('Unexpected error in loadProfile:', {
-          error,
-          name: error instanceof Error ? error.name : 'UnknownError',
-          message: error instanceof Error ? error.message : String(error),
-          stack: error instanceof Error ? error.stack : undefined
-        })
+          .single();
+
+        if (!isMounted) return;
+        if (error) throw error;
+
+        setProfile(data);
+      } catch (error) {
+        console.error('Profile load error:', error);
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
-    }
-    
-    // Add a small delay to ensure auth is fully initialized
-    const timer = setTimeout(() => {
-      loadProfile()
-    }, 500)
-    
-    return () => clearTimeout(timer)
+    };
+
+    fetchData();
+    return () => { isMounted = false };
   }, [user])
+
+  const fetchAttendance = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('attendance_summaries')
+        .select('*')
+        .eq('period_type', 'monthly')
+        .like('period_start', `${new Date().getFullYear()}-${(new Date().getMonth()+1).toString().padStart(2, '0')}%`);
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error fetching attendance:', error);
+      return null;
+    }
+  }
 
   const linkCls = (href: string) => `text-gray-600 hover:text-gray-900 ${pathname === href ? 'font-semibold' : ''}`
 
@@ -92,7 +86,9 @@ export default function Navbar() {
           <div className="flex items-center space-x-8">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <Briefcase className="h-5 w-5 text-white" />
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5 text-white">
+                  <path fillRule="evenodd" d="M6.75 2.25A.75.75 0 017.5 3v1.5h9V3A.75.75 0 0118 3v1.5h.75a3 3 0 013 3v11.25a3 3 0 01-3 3H5.25a3 3 0 01-3-3V7.5a3 3 0 013-3H6V3a.75.75 0 01.75-.75zm13.5 9a1.5 1.5 0 00-1.5-1.5H5.25a1.5 1.5 0 00-1.5 1.5v7.5a1.5 1.5 0 001.5 1.5h13.5a1.5 1.5 0 001.5-1.5v-7.5z" clipRule="evenodd" />
+                </svg>
               </div>
               <Link href="/" className="text-xl font-semibold text-gray-900">Attendance Pro</Link>
             </div>
@@ -141,23 +137,41 @@ export default function Navbar() {
               {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
             </Button>
             <div className="flex items-center space-x-3">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={profile?.avatar_url} alt={profile?.full_name || user?.email || ''} />
-                <AvatarFallback className="bg-blue-100 text-blue-600">
-                  {profile?.full_name?.charAt(0) || user?.email?.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="hidden sm:block">
-                <p className="text-sm font-medium text-gray-900">{profile?.full_name || user?.email}</p>
-                {profile?.employee_id && (
-                  <p className="text-xs text-gray-500">ID: {profile.employee_id}</p>
-                )}
-              </div>
+              {isLoading ? (
+                <div className="flex items-center gap-4">
+                  <Skeleton className="h-5 w-32 rounded-md" />
+                  <Skeleton className="h-9 w-20 rounded-md" />
+                </div>
+              ) : (
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <p className="font-medium">
+                      {profile?.full_name || user?.email?.split('@')[0]}
+                    </p>
+                    {profile?.employee_id && (
+                      <p className="text-sm text-muted-foreground">
+                        {profile.employee_id}
+                      </p>
+                    )}
+                  </div>
+                  <ErrorBoundary fallbackRender={() => null}>
+                    {!isLoading && attendance && (
+                      <div className="text-sm text-muted-foreground">
+                        {attendance.days_present} days present this month
+                      </div>
+                    )}
+                  </ErrorBoundary>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={signOut}
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    <span className="hidden sm:inline">Sign Out</span>
+                  </Button>
+                </div>
+              )}
             </div>
-            <Button variant="outline" size="sm" onClick={signOut}>
-              <LogOut className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Sign Out</span>
-            </Button>
           </div>
         </div>
       </div>

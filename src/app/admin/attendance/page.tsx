@@ -1,11 +1,12 @@
 "use client"
 
-import { useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { BackButton } from '@/components/admin/BackButton'
 import { PageHeader } from '@/components/ui/page-header'
 import { SectionCard } from '@/components/ui/section-card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useToast } from '@/hooks/use-toast'
+import { Button } from '@/components/ui/button'
+import { ChevronLeft } from 'lucide-react'
 
 type ProfileLite = { id: string; full_name: string | null; employee_id: string | null }
 
@@ -23,9 +24,7 @@ type AttendanceRow = {
   location_name: string | null
 }
 
-export default function AdminAttendanceEditorPage() {
-  const router = useRouter()
-  const [checking, setChecking] = useState(true)
+export default function AdminAttendancePage() {
   const [profiles, setProfiles] = useState<ProfileLite[]>([])
   const [userId, setUserId] = useState('')
   const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0])
@@ -34,32 +33,22 @@ export default function AdminAttendanceEditorPage() {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const { toast } = useToast()
 
-  useEffect(() => {
-    const ensureAdminAndLoad = async () => {
-      try {
-        const { createClient } = await import('@/lib/supabase/client')
-        const supabase = createClient()
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) { router.replace('/login'); return }
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-        if (profile?.role !== 'admin') { router.replace('/'); return }
-        const { data: users } = await supabase
-          .from('profiles')
-          .select('id, full_name, employee_id')
-          .order('full_name', { ascending: true })
-        setProfiles(users || [])
-      } catch (_e) {
-        router.replace('/')
-      } finally {
-        setChecking(false)
-      }
+  const loadUsers = async () => {
+    try {
+      const { createClient } = await import('@/lib/supabase/client')
+      const supabase = createClient()
+      const { data: users } = await supabase
+        .from('profiles')
+        .select('id, full_name, employee_id')
+        .order('full_name', { ascending: true })
+      setProfiles(users || [])
+    } catch (_e) {
+      // Removed auth redirect
     }
-    ensureAdminAndLoad()
-  }, [router])
+  }
 
-  const selectedUser = useMemo(() => profiles.find(p => p.id === userId) || null, [profiles, userId])
+  const selectedUser = profiles.find(p => p.id === userId) || null
 
   const fetchDay = async () => {
     if (!userId || !date) return
@@ -134,10 +123,8 @@ export default function AdminAttendanceEditorPage() {
       if (!res.ok) throw new Error(json?.error || 'Failed to save')
       setRow(json.data)
       setMessage('Saved successfully')
-      toast({ title: 'Attendance updated' })
     } catch (e: any) {
       setError(e?.message || 'Failed to save')
-      toast({ title: 'Failed to update', description: e?.message || 'Unexpected error', variant: 'destructive' })
     } finally {
       setSaving(false)
     }
@@ -158,19 +145,24 @@ export default function AdminAttendanceEditorPage() {
       if (!res.ok) throw new Error(json?.error || 'Failed to delete')
       setRow(null)
       setMessage('Deleted the day record')
-      toast({ title: 'Attendance deleted' })
     } catch (e: any) {
       setError(e?.message || 'Failed to delete')
-      toast({ title: 'Failed to delete', description: e?.message || 'Unexpected error', variant: 'destructive' })
     } finally {
       setSaving(false)
     }
   }
 
-  if (checking) return <div className="p-6">Checking permissions...</div>
+  useEffect(() => {
+    loadUsers()
+  }, [])
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
+      <BackButton 
+        href="/admin" 
+        label="Back to Admin"
+        action="push"
+      />
       <PageHeader title="Attendance Editor" description="View and adjust check-in/out for any day" />
 
       <SectionCard title="Select Day" description="Pick a user and date to load their attendance">

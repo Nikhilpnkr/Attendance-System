@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Shield, Users as UsersIcon, FileText } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { ChevronLeft } from 'lucide-react'
+import { BackButton } from '@/components/admin/BackButton'
 
 export default function AdminDashboardPage() {
   const [checking, setChecking] = useState(true)
@@ -44,6 +47,11 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
+      <BackButton 
+        href="/" 
+        label="Back to Dashboard"
+        action="push"
+      />
       <div className="flex items-center gap-3 mb-6">
         <div className="w-9 h-9 rounded-lg bg-blue-600 text-white flex items-center justify-center">
           <Shield className="w-5 h-5" />

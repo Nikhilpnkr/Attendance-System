@@ -1,6 +1,5 @@
 'use client'
 
-import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -75,7 +74,6 @@ function SetupPage() {
 }
 
 export default function HomePage() {
-  const { user, signOut, setupError } = useAuth()
   const [currentTime, setCurrentTime] = useState(new Date())
   const [profile, setProfile] = useState<Profile | null>(null)
   const [todayAttendance, setTodayAttendance] = useState<Attendance | null>(null)
@@ -97,23 +95,21 @@ export default function HomePage() {
   }, [])
 
   useEffect(() => {
-    if (user) {
-      fetchDashboardData()
-    }
-  }, [user])
+    fetchDashboardData()
+  }, [])
 
   const fetchDashboardData = async () => {
-    if (!user) return
-
     try {
       const { createClient } = await import('@/lib/supabase/client')
       const supabase = createClient()
+      const { data: authData, error: authErr } = await supabase.auth.getUser()
+      if (authErr || !authData?.user) throw authErr || new Error('Not authenticated')
+      const userId = authData.user.id
 
       // Fetch user profile
       const { data: profileData } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user.id)
         .single()
 
       setProfile(profileData)
@@ -124,7 +120,6 @@ export default function HomePage() {
       const { data: todayData } = await supabase
         .from('attendance')
         .select('*')
-        .eq('user_id', user.id)
         .eq('date', today)
         .single()
 
@@ -135,7 +130,6 @@ export default function HomePage() {
       const { data: summaryData } = await supabase
         .from('attendance_summaries')
         .select('*')
-        .eq('user_id', user.id)
         .eq('period_type', 'monthly')
         .like('period_start', `${currentMonth}%`)
         .single()
@@ -146,7 +140,6 @@ export default function HomePage() {
       const { data: recentData } = await supabase
         .from('attendance')
         .select('*')
-        .eq('user_id', user.id)
         .order('date', { ascending: false })
         .limit(7)
 
@@ -156,7 +149,6 @@ export default function HomePage() {
       const { data: leavesData } = await supabase
         .from('leave_requests')
         .select('*')
-        .eq('user_id', user.id)
         .eq('status', 'pending')
         .order('created_at', { ascending: false })
 
@@ -176,7 +168,7 @@ export default function HomePage() {
   }
 
   const handleUndoCheckout = async () => {
-    if (!user || !todayAttendance || !todayAttendance.check_out) return
+    if (!todayAttendance || !todayAttendance.check_out) return
     if (!canUndoCheckout()) {
       setActionMessage(`Undo window expired. You can undo within ${UNDO_WINDOW_MINUTES} minutes of checkout.`)
       return
@@ -203,12 +195,14 @@ export default function HomePage() {
   }
 
   const handleCheckIn = async () => {
-    if (!user) return
-
     setActionLoading(true)
     try {
       const { createClient } = await import('@/lib/supabase/client')
       const supabase = createClient()
+
+      const { data: authData, error: authErr } = await supabase.auth.getUser()
+      if (authErr || !authData?.user) throw authErr || new Error('Not authenticated')
+      const userId = authData.user.id
 
       const now = new Date()
       const today = now.toISOString().split('T')[0]
@@ -218,7 +212,7 @@ export default function HomePage() {
       const { data: existing } = await supabase
         .from('attendance')
         .select('id, check_out')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .eq('date', today)
         .maybeSingle()
 
@@ -234,7 +228,7 @@ export default function HomePage() {
       const { data, error } = await supabase
         .from('attendance')
         .insert({
-          user_id: user.id,
+          user_id: userId,
           date: today,
           check_in: checkInTime,
           status: 'present',
@@ -262,7 +256,7 @@ export default function HomePage() {
   }
 
   const handleCheckOut = async () => {
-    if (!user || !todayAttendance) return
+    if (!todayAttendance) return
 
     setActionLoading(true)
     try {
@@ -292,7 +286,7 @@ export default function HomePage() {
   }
 
   const handleBreakStart = async () => {
-    if (!user || !todayAttendance) return
+    if (!todayAttendance) return
 
     setActionLoading(true)
     try {
@@ -321,7 +315,7 @@ export default function HomePage() {
   }
 
   const handleBreakEnd = async () => {
-    if (!user || !todayAttendance) return
+    if (!todayAttendance) return
 
     setActionLoading(true)
     try {
@@ -391,28 +385,6 @@ export default function HomePage() {
     }
   }
 
-  if (setupError) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md">
-          <h1 className="text-2xl font-bold mb-4 text-gray-900">Setup Required</h1>
-          <p className="text-gray-600">Please run the comprehensive schema migration in your Supabase project.</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <h1 className="text-2xl font-bold mb-4 text-gray-900">Loading...</h1>
-        </div>
-      </div>
-    )
-  }
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -449,7 +421,7 @@ export default function HomePage() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-3xl font-bold text-gray-900">
-                Welcome back, {profile?.full_name?.split(' ')[0] || 'User'}! 👋
+                Welcome back! 👋
               </h2>
               <p className="text-gray-600 mt-1">
                 {currentTime.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}

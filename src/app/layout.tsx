@@ -1,9 +1,8 @@
-import type { Metadata } from "next";
-import { Open_Sans, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
-import { AuthProvider } from "@/contexts/AuthContext";
-import Navbar from "@/components/layout/Navbar";
+import { Open_Sans } from 'next/font/google';
+import ClientRoot from './ClientRoot';
+import './globals.css';
+import { Metadata } from 'next';
+import { Toaster } from '@/components/ui/toaster';
 
 const openSans = Open_Sans({
   variable: "--font-sans",
@@ -11,48 +10,27 @@ const openSans = Open_Sans({
   display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-mono",
-  subsets: ["latin"],
-  display: "swap",
-});
-
 export const metadata: Metadata = {
-  title: "Z.ai Code Scaffold - AI-Powered Development",
-  description: "Modern Next.js scaffold optimized for AI-powered development with Z.ai. Built with TypeScript, Tailwind CSS, and shadcn/ui.",
-  keywords: ["Z.ai", "Next.js", "TypeScript", "Tailwind CSS", "shadcn/ui", "AI development", "React"],
-  authors: [{ name: "Z.ai Team" }],
+  title: "Attendance Pro",
+  description: "Employee attendance management system",
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
-  },
-  openGraph: {
-    title: "Z.ai Code Scaffold",
-    description: "AI-powered development with modern React stack",
-    url: "https://chat.z.ai",
-    siteName: "Z.ai",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Z.ai Code Scaffold",
-    description: "AI-powered development with modern React stack",
-  },
-};
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg'
+  }
+}
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${openSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
-      >
-        <AuthProvider>
-          <Navbar />
+    <html lang="en">
+      <body>
+        <ClientRoot>
           {children}
-        </AuthProvider>
+        </ClientRoot>
         <Toaster />
       </body>
     </html>
