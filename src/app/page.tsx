@@ -110,7 +110,8 @@ export default function HomePage() {
       const { data: profileData } = await supabase
         .from('profiles')
         .select('*')
-        .single()
+        .eq('id', userId)
+        .maybeSingle()
 
       setProfile(profileData)
 
@@ -120,21 +121,28 @@ export default function HomePage() {
       const { data: todayData } = await supabase
         .from('attendance')
         .select('*')
+        .eq('user_id', userId)
         .eq('date', today)
-        .single()
+        .maybeSingle()
 
       setTodayAttendance(todayData)
 
       // Fetch monthly summary
       const currentMonth = new Date().toISOString().slice(0, 7)
-      const { data: summaryData } = await supabase
+      const { data: summaryData, error: summaryError, status: summaryStatus } = await supabase
         .from('attendance_summaries')
         .select('*')
+        .eq('user_id', userId)
         .eq('period_type', 'monthly')
         .like('period_start', `${currentMonth}%`)
-        .single()
+        .maybeSingle()
 
-      setMonthlySummary(summaryData)
+      // If the REST endpoint returns 404 for attendance_summaries, treat it as "no summary yet"
+      if (summaryError && summaryStatus !== 404) {
+        throw summaryError
+      }
+
+      setMonthlySummary(summaryData || null)
 
       // Fetch recent attendance (last 7 days)
       const { data: recentData } = await supabase
@@ -145,10 +153,11 @@ export default function HomePage() {
 
       setRecentAttendance(recentData || [])
 
-      // Fetch pending leave requests
+      // Fetch pending leave requests for this user
       const { data: leavesData } = await supabase
         .from('leave_requests')
         .select('*')
+        .eq('user_id', userId)
         .eq('status', 'pending')
         .order('created_at', { ascending: false })
 
@@ -418,7 +427,7 @@ export default function HomePage() {
       <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h2 className="text-3xl font-bold text-foreground">
                 Welcome back! 👋
@@ -440,7 +449,7 @@ export default function HomePage() {
         {profile && (
           <Card className="mb-8 border-0 shadow-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex items-center space-x-4">
                   <Avatar className="h-16 w-16 border-4 border-white/20">
                     <AvatarImage src={profile.avatar_url} alt={profile.full_name} />
@@ -607,7 +616,7 @@ export default function HomePage() {
                   onClick={handleCheckIn} 
                   disabled={actionLoading}
                   size="lg"
-                  className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8"
+                  className="w-full sm:w-auto justify-center bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8"
                 >
                   {actionLoading ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -624,7 +633,7 @@ export default function HomePage() {
                   disabled={actionLoading}
                   variant="outline"
                   size="lg"
-                  className="border-2 px-8"
+                  className="w-full sm:w-auto justify-center border-2 px-8"
                 >
                   <Coffee className="h-5 w-5 mr-2" />
                   Start Break
@@ -637,7 +646,7 @@ export default function HomePage() {
                   disabled={actionLoading}
                   variant="outline"
                   size="lg"
-                  className="border-2 px-8"
+                  className="w-full sm:w-auto justify-center border-2 px-8"
                 >
                   <Coffee className="h-5 w-5 mr-2" />
                   End Break
@@ -650,7 +659,7 @@ export default function HomePage() {
                   disabled={actionLoading}
                   variant="outline"
                   size="lg"
-                  className="border-2 px-8"
+                  className="w-full sm:w-auto justify-center border-2 px-8"
                 >
                   {actionLoading ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 mr-2"></div>
@@ -723,7 +732,7 @@ export default function HomePage() {
                     </div>
                   ) : (
                     recentAttendance.map((record) => (
-                      <div key={record.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                      <div key={record.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 p-4 border rounded-lg hover:bg-muted/40 transition-colors">
                         <div className="flex items-center space-x-4">
                           <Badge className={`${getStatusColor(record.status)} text-white`}>
                             {getStatusIcon(record.status)}

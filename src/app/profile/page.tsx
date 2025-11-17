@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
-import { User, Mail, Phone, MapPin, Briefcase, Calendar, Save, ChevronLeft, Shield, Clock, Globe } from 'lucide-react'
+import { User, Mail, Phone, MapPin, Briefcase, Calendar, Save, ChevronLeft, Shield, Clock, Globe, LogOut } from 'lucide-react'
 
 interface Profile {
   id: string
@@ -51,7 +51,7 @@ const timezones = [
 ]
 
 export default function ProfilePage() {
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -65,6 +65,8 @@ export default function ProfilePage() {
   const [passwordChanging, setPasswordChanging] = useState(false)
   const [passwordError, setPasswordError] = useState<string | null>(null)
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null)
+  const [themeMode, setThemeMode] = useState<'system' | 'light' | 'dark'>('system')
+  const [isDarkEffective, setIsDarkEffective] = useState(false)
   const [formData, setFormData] = useState({
     full_name: '',
     phone: '',
@@ -79,6 +81,46 @@ export default function ProfilePage() {
       fetchProfile()
     }
   }, [user])
+
+  // Theme controls: read initial mode from localStorage and apply effective theme
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const stored = window.localStorage.getItem('themeMode')
+    let initial: 'system' | 'light' | 'dark' = 'system'
+
+    if (stored === 'light' || stored === 'dark' || stored === 'system') {
+      initial = stored
+    }
+
+    setThemeMode(initial)
+
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+    const effective = initial === 'system' ? (prefersDark ? 'dark' : 'light') : initial
+    const root = document.documentElement
+    if (effective === 'dark') {
+      root.classList.add('dark')
+    } else {
+      root.classList.remove('dark')
+    }
+    setIsDarkEffective(effective === 'dark')
+  }, [])
+
+  const updateThemeMode = (mode: 'system' | 'light' | 'dark') => {
+    setThemeMode(mode)
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem('themeMode', mode)
+
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+    const effective = mode === 'system' ? (prefersDark ? 'dark' : 'light') : mode
+    const root = document.documentElement
+    if (effective === 'dark') {
+      root.classList.add('dark')
+    } else {
+      root.classList.remove('dark')
+    }
+    setIsDarkEffective(effective === 'dark')
+  }
 
   const fetchProfile = async () => {
     if (!user) return
@@ -266,8 +308,8 @@ export default function ProfilePage() {
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {profile && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Profile Card */}
-            <div className="lg:col-span-1">
+            {/* Profile Card + Theme Preferences (left column) */}
+            <div className="lg:col-span-1 space-y-6">
               <Card className="border-0 shadow-lg bg-card">
                 <CardHeader className="text-center">
                   <CardTitle className="text-lg">Profile Picture</CardTitle>
@@ -316,6 +358,50 @@ export default function ProfilePage() {
                       </div>
                     )}
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Theme Preferences */}
+              <Card className="border-0 shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Globe className="h-5 w-5 mr-2" />
+                    Theme Preferences
+                  </CardTitle>
+                  <CardDescription>
+                    Choose how the app appearance follows light/dark mode
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Button
+                      type="button"
+                      variant={themeMode === 'system' ? 'default' : 'outline'}
+                      className="w-full justify-center"
+                      onClick={() => updateThemeMode('system')}
+                    >
+                      System
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={themeMode === 'light' ? 'default' : 'outline'}
+                      className="w-full justify-center"
+                      onClick={() => updateThemeMode('light')}
+                    >
+                      Light
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={themeMode === 'dark' ? 'default' : 'outline'}
+                      className="w-full justify-center"
+                      onClick={() => updateThemeMode('dark')}
+                    >
+                      Dark
+                    </Button>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Current effective theme: {isDarkEffective ? 'Dark' : 'Light'}. In System mode, this follows your device setting.
+                  </p>
                 </CardContent>
               </Card>
             </div>
@@ -582,18 +668,38 @@ export default function ProfilePage() {
                           <p className="text-sm text-green-600">{passwordSuccess}</p>
                         )}
 
-                        <div className="flex justify-end">
+                        <div className="flex flex-col sm:flex-row justify-end gap-3 items-stretch sm:items-center">
                           <Button
                             size="sm"
                             onClick={handleChangePassword}
                             disabled={passwordChanging}
-                            className="bg-blue-600 hover:bg-blue-700"
+                            className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
                           >
                             {passwordChanging ? 'Updating...' : 'Update Password'}
                           </Button>
                         </div>
                       </div>
                     )}
+                  </div>
+
+                  {/* Always-visible sign out row */}
+                  <div className="flex items-center justify-between p-4 border rounded-lg bg-background/60">
+                    <div className="flex items-center space-x-3">
+                      <LogOut className="h-5 w-5 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium text-foreground">Sign out</p>
+                        <p className="text-sm text-muted-foreground">Log out of your account on this device</p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="flex items-center justify-center transition-transform transition-colors focus-visible:ring-2 focus-visible:ring-destructive/70 hover:opacity-90 hover:scale-[1.02] active:scale-[0.97]"
+                      onClick={signOut}
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Sign Out
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

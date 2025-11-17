@@ -22,7 +22,6 @@ export default function Navbar({ hidden = false }: { hidden?: boolean }) {
   const [isLoading, setIsLoading] = useState(true);
   const [profile, setProfile] = useState<{full_name?: string, employee_id?: string, role?: string} | null>(null);
   const [attendance, setAttendance] = useState<AttendanceSummary | null>(null);
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
   interface AttendanceSummary {
     days_present?: number;
@@ -36,21 +35,25 @@ export default function Navbar({ hidden = false }: { hidden?: boolean }) {
     let isMounted = true;
 
     const fetchData = async () => {
-      try {
-        if (!user || !isMounted) return;
-        
-        setIsLoading(true);
+      if (!user) return;
 
+      try {
         const { data, error } = await supabase
           .from('profiles')
           .select('full_name, employee_id, role')
           .eq('id', user.id)
           .single();
 
-        if (!isMounted) return;
         if (error) throw error;
 
-        setProfile(data);
+        if (isMounted) {
+          setProfile(data);
+        }
+
+        const attendanceData = await fetchAttendance();
+        if (isMounted) {
+          setAttendance(attendanceData?.[0] || null);
+        }
       } catch (error) {
         console.error('Profile load error:', error);
       } finally {
@@ -62,55 +65,31 @@ export default function Navbar({ hidden = false }: { hidden?: boolean }) {
     return () => { isMounted = false };
   }, [user])
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const stored = window.localStorage.getItem('theme');
-    let initial: 'light' | 'dark' = 'light';
-
-    if (stored === 'light' || stored === 'dark') {
-      initial = stored;
-    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      initial = 'dark';
-    }
-
-    setTheme(initial);
-    const root = document.documentElement;
-    if (initial === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-  }, [])
-
-  const toggleTheme = () => {
-    setTheme(prev => {
-      const next = prev === 'light' ? 'dark' : 'light';
-      if (typeof window !== 'undefined') {
-        const root = document.documentElement;
-        if (next === 'dark') {
-          root.classList.add('dark');
-        } else {
-          root.classList.remove('dark');
-        }
-        window.localStorage.setItem('theme', next);
-      }
-      return next;
-    });
-  }
-
   const fetchAttendance = async () => {
+    if (!user) return null;
+
     try {
+      const currentMonth = `${new Date().getFullYear()}-${(new Date().getMonth() + 1)
+        .toString()
+        .padStart(2, '0')}`;
+
       const { data, error } = await supabase
         .from('attendance_summaries')
         .select('*')
+        .eq('user_id', user.id)
         .eq('period_type', 'monthly')
-        .like('period_start', `${new Date().getFullYear()}-${(new Date().getMonth()+1).toString().padStart(2, '0')}%`);
+        .like('period_start', `${currentMonth}%`)
+        .maybeSingle();
 
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Error fetching attendance:', error);
+      if (error) {
+        // Treat "no row" or permission-related issues as "no summary" for the navbar badge
+        return null;
+      }
+
+      // Keep the original consumer API (array access) by wrapping in an array when present
+      return data ? [data] : null;
+    } catch {
+      // Swallow errors here to avoid noisy console logs; navbar attendance is non-critical UI
       return null;
     }
   }
@@ -170,23 +149,12 @@ export default function Navbar({ hidden = false }: { hidden?: boolean }) {
             </nav>
           </div>
           <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Toggle theme"
-              onClick={toggleTheme}
-            >
-              {theme === 'dark' ? (
-                <Sun className="h-4 w-4" />
-              ) : (
-                <Moon className="h-4 w-4" />
-              )}
-            </Button>
             <NotificationCenter />
             <Button variant="ghost" size="sm" className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
               {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
             </Button>
-            <div className="flex items-center space-x-3">
+            {/* User info hidden on mobile to avoid truncation; visible on md+ */}
+            <div className="hidden md:flex items-center space-x-3">
               {isLoading ? (
                 <div className="flex items-center gap-4">
                   <Skeleton className="h-5 w-32 rounded-md" />
@@ -211,14 +179,6 @@ export default function Navbar({ hidden = false }: { hidden?: boolean }) {
                       </div>
                     )}
                   </ErrorBoundary>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={signOut}
-                  >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Sign Out</span>
-                  </Button>
                 </div>
               )}
             </div>
@@ -227,8 +187,8 @@ export default function Navbar({ hidden = false }: { hidden?: boolean }) {
       </div>
 
       {mobileOpen && (
-        <div className="md:hidden fixed inset-0 z-50 bg-black/50">
-          <div className="bg-background w-64 h-full shadow-xl">
+        <div className="md:hidden fixed inset-0 z-50 bg-black/60">
+          <div className="bg-muted w-64 h-full shadow-xl border-r">
             <div className="p-4">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-semibold text-foreground">Menu</h2>
@@ -237,18 +197,6 @@ export default function Navbar({ hidden = false }: { hidden?: boolean }) {
                 </Button>
               </div>
               <nav className="space-y-2">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={toggleTheme}
-                >
-                  {theme === 'dark' ? (
-                    <Sun className="h-4 w-4 mr-2" />
-                  ) : (
-                    <Moon className="h-4 w-4 mr-2" />
-                  )}
-                  Toggle theme
-                </Button>
                 <Button variant="ghost" className="w-full justify-start" asChild>
                   <Link href="/" onClick={() => setMobileOpen(false)}>
                     <Home className="h-4 w-4 mr-2" />
@@ -281,12 +229,6 @@ export default function Navbar({ hidden = false }: { hidden?: boolean }) {
                     </Link>
                   </Button>
                 )}
-                <Button variant="ghost" className="w-full justify-start" asChild>
-                  <Link href="/profile" onClick={() => setMobileOpen(false)}>
-                    <Settings className="h-4 w-4 mr-2" />
-                    Profile
-                  </Link>
-                </Button>
               </nav>
             </div>
           </div>
