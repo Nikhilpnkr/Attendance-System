@@ -205,9 +205,9 @@ export default function HistoryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-50">
+      <header className="bg-background/80 backdrop-blur shadow-sm border-b sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
@@ -215,7 +215,7 @@ export default function HistoryPage() {
                 <ChevronLeft className="h-4 w-4 mr-2" />
                 Back
               </Button>
-              <h1 className="text-xl font-semibold text-gray-900">Attendance History</h1>
+              <h1 className="text-xl font-semibold text-foreground">Attendance History</h1>
             </div>
             <div className="flex items-center space-x-2">
               <Button onClick={() => exportToCSV(currentData, 'current_page')} variant="outline">
@@ -233,7 +233,7 @@ export default function HistoryPage() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Filters */}
-        <Card className="mb-8 border-0 shadow-lg">
+        <Card className="mb-8 border-0 shadow-lg bg-card">
           <CardHeader>
             <CardTitle className="flex items-center">
               <Filter className="h-5 w-5 mr-2" />
@@ -401,12 +401,12 @@ export default function HistoryPage() {
 
         {/* Results Summary */}
         <div className="mb-6 flex items-center justify-between">
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             Showing {currentData.length} of {filteredAttendance.length} records
           </p>
           <div className="flex items-center space-x-3">
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-600">Rows per page</span>
+              <span className="text-sm text-muted-foreground">Rows per page</span>
               <Select value={String(itemsPerPage)} onValueChange={(v) => { setItemsPerPage(Number(v)); setCurrentPage(1) }}>
                 <SelectTrigger className="w-20 h-8 text-sm">
                   <SelectValue placeholder="10" />
@@ -426,7 +426,7 @@ export default function HistoryPage() {
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-muted-foreground">
               Page {currentPage} of {totalPages}
             </span>
             <Button
@@ -441,7 +441,7 @@ export default function HistoryPage() {
         </div>
 
         {/* Attendance Table */}
-        <Card className="border-0 shadow-lg">
+        <Card className="border-0 shadow-lg bg-card">
           <CardHeader>
             <CardTitle>Attendance Records</CardTitle>
             <CardDescription>
@@ -467,8 +467,8 @@ export default function HistoryPage() {
               </div>
             ) : currentData.length === 0 ? (
               <div className="text-center py-8">
-                <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">No attendance records found</p>
+                <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No attendance records found</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -488,7 +488,7 @@ export default function HistoryPage() {
                   </TableHeader>
                   <TableBody>
                     {currentData.map((record) => (
-                      <TableRow key={record.id} className="hover:bg-gray-50">
+                      <TableRow key={record.id} className="hover:bg-muted/40">
                         <TableCell className="font-medium">
                           {new Date(record.date).toLocaleDateString('en-US', { 
                             weekday: 'short',
@@ -511,7 +511,7 @@ export default function HistoryPage() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center">
-                            <Coffee className="h-4 w-4 mr-1 text-gray-400" />
+                            <Coffee className="h-4 w-4 mr-1 text-muted-foreground" />
                             {record.total_break_minutes}m
                           </div>
                         </TableCell>
@@ -521,15 +521,15 @@ export default function HistoryPage() {
                         <TableCell>
                           {record.location_name ? (
                             <div className="flex items-center">
-                              <MapPin className="h-4 w-4 mr-1 text-gray-400" />
+                              <MapPin className="h-4 w-4 mr-1 text-muted-foreground" />
                               {record.location_name}
                             </div>
                           ) : (
-                            <span className="text-gray-400">N/A</span>
+                            <span className="text-muted-foreground">N/A</span>
                           )}
                         </TableCell>
                         <TableCell className="max-w-xs truncate">
-                          {record.notes || <span className="text-gray-400">No notes</span>}
+                          {record.notes || <span className="text-muted-foreground">No notes</span>}
                         </TableCell>
                       </TableRow>
                     ))}

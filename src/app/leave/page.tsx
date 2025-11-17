@@ -254,17 +254,17 @@ export default function LeavePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-background">
       <BackButton href="/" label="Back to Dashboard" />
       {/* Header */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-50">
+      <header className="bg-background/80 backdrop-blur shadow-sm border-b sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
               <Button variant="ghost" onClick={() => window.history.back()}>
                 ← Back
               </Button>
-              <h1 className="text-xl font-semibold text-gray-900">Leave Management</h1>
+              <h1 className="text-xl font-semibold text-foreground">Leave Management</h1>
             </div>
             <Dialog open={showNewRequestDialog} onOpenChange={setShowNewRequestDialog}>
               <DialogTrigger asChild>
@@ -397,7 +397,7 @@ export default function LeavePage() {
         {loading && !leaveBalance && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {[...Array(3)].map((_, i) => (
-              <Card key={i} className="border-0 shadow-lg">
+              <Card key={i} className="border-0 shadow-lg bg-card">
                 <CardContent className="p-6">
                   <Skeleton className="h-4 w-40 mb-4" />
                   <div className="flex items-center justify-between">
@@ -414,9 +414,9 @@ export default function LeavePage() {
         {/* Leave Balance Cards */}
         {leaveBalance && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card className="border-0 shadow-lg">
+            <Card className="border-0 shadow-lg bg-card">
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
                   <Plane className="h-4 w-4 mr-2 text-blue-600" />
                   Vacation Leave
                 </CardTitle>
@@ -424,13 +424,13 @@ export default function LeavePage() {
               <CardContent>
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-2xl font-bold text-gray-900">
+                    <div className="text-2xl font-bold text-foreground">
                       {leaveBalance.vacation_days - leaveBalance.used_vacation}
                     </div>
-                    <p className="text-xs text-gray-500">Days Remaining</p>
+                    <p className="text-xs text-muted-foreground">Days Remaining</p>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-muted-foreground">
                       {leaveBalance.used_vacation} / {leaveBalance.vacation_days}
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
@@ -446,7 +446,7 @@ export default function LeavePage() {
 
             <Card className="border-0 shadow-lg">
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
                   <Heart className="h-4 w-4 mr-2 text-red-600" />
                   Sick Leave
                 </CardTitle>
@@ -454,13 +454,13 @@ export default function LeavePage() {
               <CardContent>
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-2xl font-bold text-gray-900">
+                    <div className="text-2xl font-bold text-foreground">
                       {leaveBalance.sick_days - leaveBalance.used_sick}
                     </div>
-                    <p className="text-xs text-gray-500">Days Remaining</p>
+                    <p className="text-xs text-muted-foreground">Days Remaining</p>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-muted-foreground">
                       {leaveBalance.used_sick} / {leaveBalance.sick_days}
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
@@ -507,7 +507,7 @@ export default function LeavePage() {
         )}
 
         {/* Leave Requests */}
-        <Card className="border-0 shadow-lg">
+        <Card className="border-0 shadow-lg bg-card">
           <CardHeader>
             <CardTitle className="flex items-center">
               <FileText className="h-5 w-5 mr-2" />
@@ -541,8 +541,8 @@ export default function LeavePage() {
               </div>
             ) : leaveRequests.length === 0 ? (
               <div className="text-center py-8">
-                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500 mb-4">No leave requests found</p>
+                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground mb-4">No leave requests found</p>
                 <Button onClick={() => setShowNewRequestDialog(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Create Your First Request
@@ -566,7 +566,7 @@ export default function LeavePage() {
                       {currentData.map((request) => {
                         const typeInfo = getLeaveTypeInfo(request.leave_type)
                         return (
-                          <TableRow key={request.id} className="hover:bg-gray-50">
+                          <TableRow key={request.id} className="hover:bg-muted/40">
                             <TableCell>
                               <div className="flex items-center">
                                 <typeInfo.icon className="h-4 w-4 mr-2" />
@@ -575,10 +575,10 @@ export default function LeavePage() {
                             </TableCell>
                             <TableCell>
                               <div>
-                                <p className="font-medium">
+                                <p className="font-medium text-foreground">
                                   {new Date(request.start_date).toLocaleDateString()} - {new Date(request.end_date).toLocaleDateString()}
                                 </p>
-                                <p className="text-sm text-gray-600">{request.total_days} day(s)</p>
+                                <p className="text-sm text-muted-foreground">{request.total_days} day(s)</p>
                               </div>
                             </TableCell>
                             <TableCell className="max-w-xs">
@@ -625,7 +625,7 @@ export default function LeavePage() {
                 </div>
                 {/* Pagination */}
                 <div className="mt-4 flex items-center justify-between">
-                  <p className="text-sm text-gray-600">Showing page {page} of {totalPages}</p>
+                  <p className="text-sm text-muted-foreground">Showing page {page} of {totalPages}</p>
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"

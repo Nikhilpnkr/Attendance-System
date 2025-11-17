@@ -387,12 +387,12 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Skeleton className="h-8 w-64 mb-6" />
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="p-4 bg-white rounded-lg shadow">
+              <div key={i} className="p-4 bg-card rounded-lg shadow">
                 <Skeleton className="h-4 w-36 mb-3" />
                 <Skeleton className="h-6 w-24" />
               </div>
@@ -414,16 +414,16 @@ export default function HomePage() {
   const isOnBreak = todayAttendance && todayAttendance.break_start && !todayAttendance.break_end
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-background">
       <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900">
+              <h2 className="text-3xl font-bold text-foreground">
                 Welcome back! 👋
               </h2>
-              <p className="text-gray-600 mt-1">
+              <p className="text-muted-foreground mt-1">
                 {currentTime.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
               </p>
             </div>
@@ -431,7 +431,7 @@ export default function HomePage() {
               <div className="text-3xl font-bold text-blue-600">
                 {currentTime.toLocaleTimeString()}
               </div>
-              <p className="text-sm text-gray-500">Current Time</p>
+              <p className="text-sm text-muted-foreground">Current Time</p>
             </div>
           </div>
         </div>
@@ -476,9 +476,9 @@ export default function HomePage() {
         {/* Quick Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           {/* Today's Status */}
-          <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow bg-card">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
                 <Calendar className="h-4 w-4 mr-2 text-blue-600" />
                 Today's Status
               </CardTitle>
@@ -499,20 +499,20 @@ export default function HomePage() {
                   )}
                 </div>
                 <div className="text-right">
-                  <div className="text-2xl font-bold text-gray-900">
+                  <div className="text-2xl font-bold text-foreground">
                     {todayAttendance ? 
                       calculateWorkHours(todayAttendance.check_in, todayAttendance.check_out, todayAttendance.total_break_minutes) : 
                       '0h 0m'
                     }
                   </div>
-                  <p className="text-xs text-gray-500">Work Hours</p>
+                  <p className="text-xs text-muted-foreground">Work Hours</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Monthly Attendance */}
-          <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow bg-card">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
                 <TrendingUp className="h-4 w-4 mr-2 text-green-600" />
@@ -522,16 +522,16 @@ export default function HomePage() {
             <CardContent>
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-3xl font-bold text-gray-900">
+                  <div className="text-3xl font-bold text-foreground">
                     {monthlySummary ? `${monthlySummary.attendance_percentage}%` : 'N/A'}
                   </div>
-                  <p className="text-xs text-gray-500">Attendance Rate</p>
+                  <p className="text-xs text-muted-foreground">Attendance Rate</p>
                 </div>
                 <div className="text-right">
                   <div className="text-lg font-semibold text-green-600">
                     {monthlySummary ? monthlySummary.present_days : 0}
                   </div>
-                  <p className="text-xs text-gray-500">Days Present</p>
+                  <p className="text-xs text-muted-foreground">Days Present</p>
                 </div>
               </div>
               {monthlySummary && (
@@ -541,7 +541,7 @@ export default function HomePage() {
           </Card>
 
           {/* Overtime Hours */}
-          <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow bg-card">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
                 <Timer className="h-4 w-4 mr-2 text-purple-600" />
@@ -551,10 +551,10 @@ export default function HomePage() {
             <CardContent>
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-3xl font-bold text-gray-900">
+                  <div className="text-3xl font-bold text-foreground">
                     {monthlySummary ? monthlySummary.total_overtime_hours.toFixed(1) : '0.0'}
                   </div>
-                  <p className="text-xs text-gray-500">This Month</p>
+                  <p className="text-xs text-muted-foreground">This Month</p>
                 </div>
                 <div className="text-right">
                   <Award className="h-8 w-8 text-purple-600" />
@@ -564,7 +564,7 @@ export default function HomePage() {
           </Card>
 
           {/* Pending Leaves */}
-          <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow bg-card">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
                 <FileText className="h-4 w-4 mr-2 text-orange-600" />
@@ -574,10 +574,10 @@ export default function HomePage() {
             <CardContent>
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-3xl font-bold text-gray-900">
+                  <div className="text-3xl font-bold text-foreground">
                     {pendingLeaves.length}
                   </div>
-                  <p className="text-xs text-gray-500">Awaiting Approval</p>
+                  <p className="text-xs text-muted-foreground">Awaiting Approval</p>
                 </div>
                 <div className="text-right">
                   {pendingLeaves.length > 0 ? (
@@ -592,9 +592,9 @@ export default function HomePage() {
         </div>
 
         {/* Quick Actions */}
-        <Card className="mb-8 border-0 shadow-lg">
+        <Card className="mb-8 border-0 shadow-lg bg-card">
           <CardHeader>
-            <CardTitle className="text-xl font-bold text-gray-900">Quick Actions</CardTitle>
+            <CardTitle className="text-xl font-bold text-foreground">Quick Actions</CardTitle>
             <CardDescription>
               Manage your attendance for today
             </CardDescription>
@@ -690,7 +690,7 @@ export default function HomePage() {
               )}
             </div>
             {actionMessage && (
-              <div className="mt-4 text-sm text-gray-700">{actionMessage}</div>
+              <div className="mt-4 text-sm text-muted-foreground">{actionMessage}</div>
             )}
           </CardContent>
         </Card>
@@ -704,7 +704,7 @@ export default function HomePage() {
           </TabsList>
           
           <TabsContent value="recent">
-            <Card className="border-0 shadow-lg">
+            <Card className="border-0 shadow-lg bg-card">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Activity className="h-5 w-5 mr-2" />
@@ -730,20 +730,20 @@ export default function HomePage() {
                             {record.status.replace('_', ' ').toUpperCase()}
                           </Badge>
                           <div>
-                            <p className="font-medium text-gray-900">
+                            <p className="font-medium text-foreground">
                               {new Date(record.date).toLocaleDateString('en-US', { 
                                 weekday: 'short', 
                                 month: 'short', 
                                 day: 'numeric' 
                               })}
                             </p>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-sm text-muted-foreground">
                               In: {formatTime(record.check_in)}
                               {record.check_out && ` | Out: ${formatTime(record.check_out)}`}
                               {record.total_break_minutes > 0 && ` | Break: ${record.total_break_minutes}m`}
                             </p>
                             {record.work_mode !== 'office' && (
-                              <p className="text-xs text-gray-500 flex items-center mt-1">
+                              <p className="text-xs text-muted-foreground flex items-center mt-1">
                                 <MapPin className="h-3 w-3 mr-1" />
                                 {record.work_mode}
                               </p>
@@ -751,7 +751,7 @@ export default function HomePage() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold text-gray-900">
+                          <p className="font-semibold text-foreground">
                             {calculateWorkHours(record.check_in, record.check_out, record.total_break_minutes)}
                           </p>
                           <p className="text-xs text-gray-500">Total Hours</p>
@@ -779,12 +779,12 @@ export default function HomePage() {
                 <div className="space-y-4">
                   {pendingLeaves.length === 0 ? (
                     <div className="text-center py-8">
-                      <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-500">No pending leave requests</p>
+                      <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">No pending leave requests</p>
                     </div>
                   ) : (
                     pendingLeaves.map((leave) => (
-                      <div key={leave.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                      <div key={leave.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/40 transition-colors">
                         <div className="flex items-center space-x-4">
                           <Badge variant="outline" className="px-3 py-1">
                             {leave.leave_type.toUpperCase()}
@@ -827,19 +827,19 @@ export default function HomePage() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                     <div className="text-center p-4 bg-green-50 rounded-lg">
                       <div className="text-3xl font-bold text-green-600">{monthlySummary.present_days}</div>
-                      <p className="text-sm text-gray-600 mt-1">Present Days</p>
+                      <p className="text-sm text-muted-foreground mt-1">Present Days</p>
                     </div>
                     <div className="text-center p-4 bg-red-50 rounded-lg">
                       <div className="text-3xl font-bold text-red-600">{monthlySummary.absent_days}</div>
-                      <p className="text-sm text-gray-600 mt-1">Absent Days</p>
+                      <p className="text-sm text-muted-foreground mt-1">Absent Days</p>
                     </div>
                     <div className="text-center p-4 bg-blue-50 rounded-lg">
                       <div className="text-3xl font-bold text-blue-600">{monthlySummary.total_work_hours.toFixed(1)}</div>
-                      <p className="text-sm text-gray-600 mt-1">Total Hours</p>
+                      <p className="text-sm text-muted-foreground mt-1">Total Hours</p>
                     </div>
                     <div className="text-center p-4 bg-purple-50 rounded-lg">
                       <div className="text-3xl font-bold text-purple-600">{monthlySummary.total_overtime_hours.toFixed(1)}</div>
-                      <p className="text-sm text-gray-600 mt-1">Overtime Hours</p>
+                      <p className="text-sm text-muted-foreground mt-1">Overtime Hours</p>
                     </div>
                   </div>
                 ) : (

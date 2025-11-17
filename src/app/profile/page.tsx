@@ -56,6 +56,15 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [editMode, setEditMode] = useState(false)
+  const [showPasswordForm, setShowPasswordForm] = useState(false)
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  })
+  const [passwordChanging, setPasswordChanging] = useState(false)
+  const [passwordError, setPasswordError] = useState<string | null>(null)
+  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     full_name: '',
     phone: '',
@@ -136,6 +145,46 @@ export default function ProfilePage() {
     }
   }
 
+  const handleChangePassword = async () => {
+    if (!user) return
+
+    setPasswordError(null)
+    setPasswordSuccess(null)
+
+    if (!passwordForm.newPassword || passwordForm.newPassword.length < 6) {
+      setPasswordError('New password must be at least 6 characters long.')
+      return
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError('New password and confirm password do not match.')
+      return
+    }
+
+    try {
+      setPasswordChanging(true)
+      const { createClient } = await import('@/lib/supabase/client')
+      const supabase = createClient()
+
+      const { error } = await supabase.auth.updateUser({
+        password: passwordForm.newPassword,
+      })
+
+      if (error) {
+        throw error
+      }
+
+      setPasswordSuccess('Password updated successfully.')
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
+      setShowPasswordForm(false)
+    } catch (error: any) {
+      console.error('Error changing password:', error)
+      setPasswordError(error?.message || 'Failed to change password. Please try again.')
+    } finally {
+      setPasswordChanging(false)
+    }
+  }
+
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -159,9 +208,9 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-50">
+      <header className="bg-background/80 backdrop-blur shadow-sm border-b sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
@@ -169,7 +218,7 @@ export default function ProfilePage() {
                 <ChevronLeft className="h-4 w-4 mr-2" />
                 Back
               </Button>
-              <h1 className="text-xl font-semibold text-gray-900">Profile Settings</h1>
+              <h1 className="text-xl font-semibold text-foreground">Profile Settings</h1>
             </div>
             <div className="flex items-center space-x-2">
               {editMode ? (
@@ -219,7 +268,7 @@ export default function ProfilePage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Profile Card */}
             <div className="lg:col-span-1">
-              <Card className="border-0 shadow-lg">
+              <Card className="border-0 shadow-lg bg-card">
                 <CardHeader className="text-center">
                   <CardTitle className="text-lg">Profile Picture</CardTitle>
                 </CardHeader>
@@ -234,8 +283,8 @@ export default function ProfilePage() {
                   </div>
                   <Separator />
                   <div>
-                    <h3 className="text-xl font-bold text-gray-900">{profile.full_name}</h3>
-                    <p className="text-gray-600">{profile.position}</p>
+                    <h3 className="text-xl font-bold text-foreground">{profile.full_name}</h3>
+                    <p className="text-muted-foreground">{profile.position}</p>
                     <Badge variant="outline" className="mt-2">
                       {profile.employee_id}
                     </Badge>
@@ -245,25 +294,25 @@ export default function ProfilePage() {
                 <CardContent>
                   <div className="space-y-3 text-left">
                     <div className="flex items-center space-x-2">
-                      <Mail className="h-4 w-4 text-gray-400" />
-                      <span className="text-sm text-gray-600">{user.email}</span>
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">{user.email}</span>
                     </div>
                     {profile.phone && (
                       <div className="flex items-center space-x-2">
-                        <Phone className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm text-gray-600">{profile.phone}</span>
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">{profile.phone}</span>
                       </div>
                     )}
                     {profile.department && (
                       <div className="flex items-center space-x-2">
-                        <Briefcase className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm text-gray-600">{profile.department}</span>
+                        <Briefcase className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">{profile.department}</span>
                       </div>
                     )}
                     {profile.address && (
                       <div className="flex items-center space-x-2">
-                        <MapPin className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm text-gray-600">{profile.address}</span>
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">{profile.address}</span>
                       </div>
                     )}
                   </div>
@@ -310,7 +359,7 @@ export default function ProfilePage() {
                     <Label htmlFor="phone">Phone Number</Label>
                     <Input
                       id="phone"
-                      value={editMode ? formData.phone : profile.phone}
+                      value={editMode ? formData.phone : (profile.phone || '')}
                       onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                       disabled={!editMode}
                       placeholder="+1 (555) 123-4567"
@@ -321,7 +370,7 @@ export default function ProfilePage() {
                     <Label htmlFor="address">Address</Label>
                     <Input
                       id="address"
-                      value={editMode ? formData.address : profile.address}
+                      value={editMode ? formData.address : (profile.address || '')}
                       onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
                       disabled={!editMode}
                       placeholder="123 Main St, City, State 12345"
@@ -332,7 +381,7 @@ export default function ProfilePage() {
                     <Label htmlFor="bio">Bio</Label>
                     <Textarea
                       id="bio"
-                      value={editMode ? formData.bio : profile.bio}
+                      value={editMode ? formData.bio : (profile.bio || '')}
                       onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
                       disabled={!editMode}
                       placeholder="Tell us about yourself..."
@@ -358,7 +407,7 @@ export default function ProfilePage() {
                     <div className="space-y-2">
                       <Label htmlFor="work_schedule">Work Schedule</Label>
                       <Select 
-                        value={editMode ? formData.work_schedule : profile.work_schedule} 
+                        value={editMode ? formData.work_schedule : (profile.work_schedule || '9_to_5')} 
                         onValueChange={(value) => setFormData(prev => ({ ...prev, work_schedule: value }))}
                         disabled={!editMode}
                       >
@@ -378,7 +427,7 @@ export default function ProfilePage() {
                     <div className="space-y-2">
                       <Label htmlFor="timezone">Timezone</Label>
                       <Select 
-                        value={editMode ? formData.timezone : profile.timezone} 
+                        value={editMode ? formData.timezone : (profile.timezone || 'UTC')} 
                         onValueChange={(value) => setFormData(prev => ({ ...prev, timezone: value }))}
                         disabled={!editMode}
                       >
@@ -401,7 +450,7 @@ export default function ProfilePage() {
                       <Label htmlFor="department">Department</Label>
                       <Input
                         id="department"
-                        value={profile.department}
+                        value={profile.department || ''}
                         disabled
                         className="bg-gray-50"
                       />
@@ -410,7 +459,7 @@ export default function ProfilePage() {
                       <Label htmlFor="position">Position</Label>
                       <Input
                         id="position"
-                        value={profile.position}
+                        value={profile.position || ''}
                         disabled
                         className="bg-gray-50"
                       />
@@ -451,23 +500,23 @@ export default function ProfilePage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center justify-between p-4 border rounded-lg bg-background/60">
                     <div className="flex items-center space-x-3">
-                      <Mail className="h-5 w-5 text-gray-400" />
+                      <Mail className="h-5 w-5 text-muted-foreground" />
                       <div>
-                        <p className="font-medium">Email Verification</p>
-                        <p className="text-sm text-gray-600">{user.email}</p>
+                        <p className="font-medium text-foreground">Email Verification</p>
+                        <p className="text-sm text-muted-foreground">{user.email}</p>
                       </div>
                     </div>
                     <Badge className="bg-green-100 text-green-800">Verified</Badge>
                   </div>
 
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center justify-between p-4 border rounded-lg bg-background/60">
                     <div className="flex items-center space-x-3">
-                      <Globe className="h-5 w-5 text-gray-400" />
+                      <Globe className="h-5 w-5 text-muted-foreground" />
                       <div>
-                        <p className="font-medium">Two-Factor Authentication</p>
-                        <p className="text-sm text-gray-600">Add an extra layer of security</p>
+                        <p className="font-medium text-foreground">Two-Factor Authentication</p>
+                        <p className="text-sm text-muted-foreground">Add an extra layer of security</p>
                       </div>
                     </div>
                     <Button variant="outline" size="sm">
@@ -475,17 +524,76 @@ export default function ProfilePage() {
                     </Button>
                   </div>
 
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <Calendar className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <p className="font-medium">Password</p>
-                        <p className="text-sm text-gray-600">Last changed 30 days ago</p>
+                  <div className="flex flex-col space-y-4 p-4 border rounded-lg bg-background/60">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <Calendar className="h-5 w-5 text-gray-400" />
+                        <div>
+                          <p className="font-medium">Password</p>
+                          <p className="text-sm text-gray-600">Update your account password</p>
+                        </div>
                       </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setShowPasswordForm((prev) => !prev)
+                          setPasswordError(null)
+                          setPasswordSuccess(null)
+                        }}
+                      >
+                        {showPasswordForm ? 'Cancel' : 'Change Password'}
+                      </Button>
                     </div>
-                    <Button variant="outline" size="sm">
-                      Change Password
-                    </Button>
+
+                    {showPasswordForm && (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <Label htmlFor="new_password">New Password</Label>
+                            <Input
+                              id="new_password"
+                              type="password"
+                              value={passwordForm.newPassword}
+                              onChange={(e) =>
+                                setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }))
+                              }
+                              className="border border-gray-400 bg-white"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label htmlFor="confirm_password">Confirm Password</Label>
+                            <Input
+                              id="confirm_password"
+                              type="password"
+                              value={passwordForm.confirmPassword}
+                              onChange={(e) =>
+                                setPasswordForm((prev) => ({ ...prev, confirmPassword: e.target.value }))
+                              }
+                              className="border border-gray-400 bg-white"
+                            />
+                          </div>
+                        </div>
+
+                        {passwordError && (
+                          <p className="text-sm text-red-600">{passwordError}</p>
+                        )}
+                        {passwordSuccess && (
+                          <p className="text-sm text-green-600">{passwordSuccess}</p>
+                        )}
+
+                        <div className="flex justify-end">
+                          <Button
+                            size="sm"
+                            onClick={handleChangePassword}
+                            disabled={passwordChanging}
+                            className="bg-blue-600 hover:bg-blue-700"
+                          >
+                            {passwordChanging ? 'Updating...' : 'Update Password'}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

@@ -189,9 +189,9 @@ export default function AnalyticsPage() {
   const statusDistribution = getStatusDistribution()
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-50">
+      <header className="bg-background/80 backdrop-blur shadow-sm border-b sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
@@ -199,7 +199,7 @@ export default function AnalyticsPage() {
                 <ChevronLeft className="h-4 w-4 mr-2" />
                 Back
               </Button>
-              <h1 className="text-xl font-semibold text-gray-900">Analytics & Reports</h1>
+              <h1 className="text-xl font-semibold text-foreground">Analytics & Reports</h1>
             </div>
             <div className="flex items-center space-x-4">
               <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
@@ -225,72 +225,72 @@ export default function AnalyticsPage() {
         {loading ? (
           <div className="text-center py-16">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-500">Loading analytics data...</p>
+            <p className="text-muted-foreground">Loading analytics data...</p>
           </div>
         ) : (
           <div className="space-y-8">
             {/* Key Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <Card className="border-0 shadow-lg">
+              <Card className="border-0 shadow-lg bg-card">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
+                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
                     <TrendingUp className="h-4 w-4 mr-2 text-green-600" />
                     Attendance Rate
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-gray-900">
+                  <div className="text-3xl font-bold text-foreground">
                     {currentStats ? `${currentStats.attendance_percentage}%` : 'N/A'}
                   </div>
-                  <p className="text-xs text-gray-500">This Month</p>
+                  <p className="text-xs text-muted-foreground">This Month</p>
                   {currentStats && (
                     <Progress value={currentStats.attendance_percentage} className="mt-3" />
                   )}
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-lg">
+              <Card className="border-0 shadow-lg bg-card">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
+                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
                     <Clock className="h-4 w-4 mr-2 text-blue-600" />
                     Work Hours
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-gray-900">
+                  <div className="text-3xl font-bold text-foreground">
                     {currentStats ? currentStats.total_work_hours.toFixed(1) : 'N/A'}
                   </div>
-                  <p className="text-xs text-gray-500">This Month</p>
+                  <p className="text-xs text-muted-foreground">This Month</p>
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-lg">
+              <Card className="border-0 shadow-lg bg-card">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
+                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
                     <Coffee className="h-4 w-4 mr-2 text-purple-600" />
                     Overtime
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-gray-900">
+                  <div className="text-3xl font-bold text-foreground">
                     {currentStats ? currentStats.total_overtime_hours.toFixed(1) : 'N/A'}
                   </div>
-                  <p className="text-xs text-gray-500">This Month</p>
+                  <p className="text-xs text-muted-foreground">This Month</p>
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-lg">
+              <Card className="border-0 shadow-lg bg-card">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
+                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
                     <Target className="h-4 w-4 mr-2 text-orange-600" />
                     Punctuality
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-gray-900">
+                  <div className="text-3xl font-bold text-foreground">
                     {currentStats ? `${currentStats.punctuality_percentage}%` : 'N/A'}
                   </div>
-                  <p className="text-xs text-gray-500">This Month</p>
+                  <p className="text-xs text-muted-foreground">This Month</p>
                   {currentStats && (
                     <Progress value={currentStats.punctuality_percentage} className="mt-3" />
                   )}
@@ -309,7 +309,7 @@ export default function AnalyticsPage() {
               
               <TabsContent value="trends">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <Card className="border-0 shadow-lg">
+                  <Card className="border-0 shadow-lg bg-card">
                     <CardHeader>
                       <CardTitle>Attendance Rate Trend</CardTitle>
                       <CardDescription>Monthly attendance percentage over time</CardDescription>
@@ -333,7 +333,7 @@ export default function AnalyticsPage() {
                     </CardContent>
                   </Card>
 
-                  <Card className="border-0 shadow-lg">
+                  <Card className="border-0 shadow-lg bg-card">
                     <CardHeader>
                       <CardTitle>Work Hours Trend</CardTitle>
                       <CardDescription>Monthly work hours including overtime</CardDescription>
@@ -370,7 +370,7 @@ export default function AnalyticsPage() {
               
               <TabsContent value="distribution">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <Card className="border-0 shadow-lg">
+                  <Card className="border-0 shadow-lg bg-card">
                     <CardHeader>
                       <CardTitle>Status Distribution</CardTitle>
                       <CardDescription>Breakdown of attendance status this month</CardDescription>
@@ -398,7 +398,7 @@ export default function AnalyticsPage() {
                     </CardContent>
                   </Card>
 
-                  <Card className="border-0 shadow-lg">
+                  <Card className="border-0 shadow-lg bg-card">
                     <CardHeader>
                       <CardTitle>Monthly Comparison</CardTitle>
                       <CardDescription>Present vs Absent days comparison</CardDescription>
@@ -420,7 +420,7 @@ export default function AnalyticsPage() {
               </TabsContent>
               
               <TabsContent value="comparison">
-                <Card className="border-0 shadow-lg">
+                <Card className="border-0 shadow-lg bg-card">
                   <CardHeader>
                     <CardTitle>Performance Metrics</CardTitle>
                     <CardDescription>Compare different attendance metrics</CardDescription>
@@ -443,7 +443,7 @@ export default function AnalyticsPage() {
               
               <TabsContent value="summary">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card className="border-0 shadow-lg">
+                  <Card className="border-0 shadow-lg bg-card">
                     <CardHeader>
                       <CardTitle className="flex items-center">
                         <Calendar className="h-5 w-5 mr-2" />
@@ -454,30 +454,30 @@ export default function AnalyticsPage() {
                       {currentStats ? (
                         <div className="space-y-4">
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Period:</span>
+                            <span className="text-muted-foreground">Period:</span>
                             <span className="font-medium">
                               {new Date(currentStats.period_start).toLocaleDateString()} - {new Date(currentStats.period_end).toLocaleDateString()}
                             </span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Present Days:</span>
+                            <span className="text-muted-foreground">Present Days:</span>
                             <span className="font-medium text-green-600">{currentStats.present_days}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Absent Days:</span>
+                            <span className="text-muted-foreground">Absent Days:</span>
                             <span className="font-medium text-red-600">{currentStats.absent_days}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Late Days:</span>
+                            <span className="text-muted-foreground">Late Days:</span>
                             <span className="font-medium text-yellow-600">{currentStats.late_days}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Leave Days:</span>
+                            <span className="text-muted-foreground">Leave Days:</span>
                             <span className="font-medium text-blue-600">{currentStats.leave_days}</span>
                           </div>
                         </div>
                       ) : (
-                        <p className="text-gray-500">No data available</p>
+                        <p className="text-muted-foreground">No data available</p>
                       )}
                     </CardContent>
                   </Card>
@@ -493,28 +493,28 @@ export default function AnalyticsPage() {
                       {yearlyStats ? (
                         <div className="space-y-4">
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Total Work Hours:</span>
+                            <span className="text-muted-foreground">Total Work Hours:</span>
                             <span className="font-medium">{yearlyStats.total_work_hours.toFixed(1)}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Total Overtime:</span>
+                            <span className="text-muted-foreground">Total Overtime:</span>
                             <span className="font-medium">{yearlyStats.total_overtime_hours.toFixed(1)}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Total Present Days:</span>
+                            <span className="text-muted-foreground">Total Present Days:</span>
                             <span className="font-medium text-green-600">{yearlyStats.present_days}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Total Absent Days:</span>
+                            <span className="text-muted-foreground">Total Absent Days:</span>
                             <span className="font-medium text-red-600">{yearlyStats.absent_days}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Average Attendance:</span>
+                            <span className="text-muted-foreground">Average Attendance:</span>
                             <span className="font-medium">{yearlyStats.attendance_percentage.toFixed(1)}%</span>
                           </div>
                         </div>
                       ) : (
-                        <p className="text-gray-500">No data available</p>
+                        <p className="text-muted-foreground">No data available</p>
                       )}
                     </CardContent>
                   </Card>
